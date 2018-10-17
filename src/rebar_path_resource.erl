@@ -1,79 +1,102 @@
 -module(rebar_path_resource).
--behaviour(rebar_resource).
 
--export([lock/2,
-         download/3,
+-export([init/2,
+         lock/2,
+         download/4, download/3,
          needs_update/2,
          make_vsn/1]).
 
-lock(_Dir, {path, Path}) ->
-  Vsn = hash_files(Path),
-  {path, Path, binary_to_list(Vsn)};
-lock(_Dir, {path, Path, _VSN}) ->
-  Vsn = hash_files(Path),
-  {path, Path, binary_to_list(Vsn)}.
+-include_lib("kernel/include/file.hrl").
 
-download(Dir, {path, Path}, State) ->
-  download_(Dir, Path, State);
-download(Dir, {path, Path, _Ref}, State) ->
-  download_(Dir, Path, State).
+init(Type, _State) ->
+  rebar_log:log(debug, "init resource type=~p, state=~p", [Type, _State]),
+  io:format(user,  "init resource type=~p, state=~p", [Type, _State]),
+
+   Resource = rebar_resource_v2:new(Type, ?MODULE, #{}),
+   {ok, Resource}.
+
+lock(Dir, Source) when is_tuple(Source) ->
+  lock_(Dir, Source);
+
+lock(AppInfo, _) ->
+  lock_(rebar_app_info:dir(AppInfo), rebar_app_info:source(AppInfo)).
+
+lock_(Dir, {path, Path, _}) ->
+  lock_(Dir, {path, Path});
+
+lock_(_Dir, {path, Path}) ->
+  {ok, Cwd} = file:get_cwd(),
+  Source = filename:join([Cwd, Path]),
+  {path, Path, {mtime, to_iso8601(last_modified(Source))}}.
+
+download(TmpDir, {path, Path, _}, State) ->
+  download(TmpDir, {path, Path}, State);
+download(TmpDir, {path, Path}, State) ->
+
+  case download_(TmpDir, {path, Path}, State) of
+    ok -> {ok, State};
+    Error -> Error
+  end.
+
+download(TmpDir, AppInfo, State, _) ->
+  download_(TmpDir, rebar_app_info:source(AppInfo), State).
+
+download_(Dir, {path, Path}, _State) ->
+  ok = filelib:ensure_dir(Dir),
+  {ok, Cwd} = file:get_cwd(),
+  Source = filename:join([Cwd, Path]),
+  ok = ec_file:copy(Source, Dir, [recursive, {file_info, [mode, time, owner, group]}]),
+  rebar_log:log(debug, "copied source from=~p, to=~p ~n", [Path, Dir]),
+  LastModified = last_modified(Source),
+  {ok, A} = file:read_file_info(Dir),
+  file:write_file_info(Path, A#file_info{mtime = LastModified, atime = LastModified}).
+
 
 make_vsn(_Dir) ->
   {error, "Replacing version of type path not supported."}.
 
 needs_update(Dir, {path, Path, _}) ->
+  needs_update_(Dir, {path, Path});
+needs_update(AppInfo, _) ->
+  needs_update_(rebar_app_info:dir(AppInfo), rebar_app_info:source(AppInfo)).
+
+needs_update_(Dir, {path, Path}) ->
   {ok, Cwd} = file:get_cwd(),
   Source = filename:join([Cwd, Path]),
-  OldHash = read_hash(Dir),
-  Need = hash_files(Source) /= OldHash,
-  Need.
+  LastModified = last_modified(Source),
+  Old = filelib:last_modified(Dir),
+  rebar_log:log(debug, "compare dir=~p, path=~p last modified=~p, old=~p~n", [Dir, Path, LastModified, Old]),
+  (Old < LastModified).
 
 
-download_(Dir, Path, State) ->
-  ok = filelib:ensure_dir(Dir),
-  {ok, Cwd} = file:get_cwd(),
-  Source = filename:join([Cwd, Path]),
-  ec_file:copy(Source, Dir, [recursive, {file_info, [mode, time, owner, group]}]),
-  Hash = hash_files(Source),
-  ok = store_hash(Dir, Hash),
-  {ok, State}.
+last_modified(Source) ->
+  Files = filter_files(dir_files(Source)),
+  last_modified_(Files).
 
-hashname(Dir) -> filename:join([Dir, "._rebar_shah1sum"]).
-
-store_hash(Dir, Hash) ->
-  file:write_file(hashname(Dir), Hash).
-
-read_hash(Dir) ->
-  {ok, Hash} = file:read_file(hashname(Dir)),
-  Hash.
-
-to_timestamp({{Year,Month,Day},{Hours,Minutes,Seconds}}) ->
-  (calendar:datetime_to_gregorian_seconds(
-     {{Year,Month,Day},{Hours,Minutes,Seconds}}
-    ) - 62167219200)*1000000.
+last_modified_([]) -> calendar:local_time();
+last_modified_(Files) ->
+  lists:foldl(
+    fun(Path, OldT) ->
+        T = filelib:last_modified(Path),
+        if
+          T > OldT -> T;
+          true -> OldT
+        end
+    end,
+    0,
+    Files).
 
 
-hash_files(Source) ->
-  Files = lists:sort(filter_files(dir_files(Source))),
-  State = crypto:hash_init(sha),
+%%to_timestamp({{Year,Month,Day},{Hours,Minutes,Seconds}}) ->
+%%  (calendar:datetime_to_gregorian_seconds(
+%%     {{Year,Month,Day},{Hours,Minutes,Seconds}}
+%%    ) - 62167219200)*1000000.
 
-  State2= lists:foldl(
-            fun(Path, State1) ->
-                LastModified = to_timestamp(filelib:last_modified(Path)),
-                crypto:hash_update(State1, iolist_to_binary([Path, integer_to_binary(LastModified)]))
-            end,
-            State,
-            Files
-           ),
 
-  Digest = crypto:hash_final(State2),
-  to_hex(Digest).
-
-to_hex(Bin) ->
-    << <<(to_digit(H)),(to_digit(L))>> || <<H:4,L:4>> <= Bin >>.
-
-to_digit(N) when N < 10 -> $0 + N;
-to_digit(N)             -> $a + N-10.
+to_iso8601({{Y,Mo,D}, {H,Mn,S}}) ->
+    FmtStr = "~4.10.0B-~2.10.0B-~2.10.0BT~2.10.0B:~2.10.0B:~2.10.0BZ",
+    IsoStr = io_lib:format(FmtStr, [Y, Mo, D, H, Mn, S]),
+    list_to_binary(IsoStr).
 
 
 dir_files(Path) ->
