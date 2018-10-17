@@ -9,9 +9,6 @@
 -include_lib("kernel/include/file.hrl").
 
 init(Type, _State) ->
-  rebar_log:log(debug, "init resource type=~p, state=~p", [Type, _State]),
-  io:format(user,  "init resource type=~p, state=~p", [Type, _State]),
-
    Resource = rebar_resource_v2:new(Type, ?MODULE, #{}),
    {ok, Resource}.
 
