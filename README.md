@@ -17,17 +17,24 @@ Build
 Use
 ---
 
-To use it add to your rebar.config dependencies the path : 
+Let’s start off by making a new OTP application `hello_utils` inside of your  project `hello-world`:
+
+
+    # inside of hello-world/
+    $ rebar3 new app hello_utils
+
+This will create a new folder hello_utils inside of which a `rebar.config` and `src` folder are ready to be useed. 
+In order to tell rebar3 about this, open up `hello_world/rebar.config` and add hello_utils to your dependencies:
 
 ```erlang
 {deps, [
-  {mysubapp, {path, "mysubapp"}},
+  {hello_utils, {path, "hello_utils"}},
   ..
 ]
 
 ```
 
-This tells Rebar that we depend on an application called mysubapp which is found in the mysubapp 
+This tells Rebar that we depend on an application called `hello_utils` which is found in the hello_utils 
 folder (relative to the `rebar.config` file it’s written in).
 
 
@@ -42,7 +49,7 @@ Then just compile your application
     $ rebar3 compile
     ===> Compiling rebar3_path_deps
     ===> Verifying dependencies...
-    ===> Fetching mysubapp ({path,"./mysubapp",
+    ===> Fetching hello_utils ({path,"hello_utils",
                                         {mtime,<<"2018-10-17T11:21:18Z">>}})
     ===> Compiling mysubapp
     ===> Compiling myapp
