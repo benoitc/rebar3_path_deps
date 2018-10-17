@@ -86,13 +86,6 @@ last_modified_(Files) ->
     0,
     Files).
 
-
-%%to_timestamp({{Year,Month,Day},{Hours,Minutes,Seconds}}) ->
-%%  (calendar:datetime_to_gregorian_seconds(
-%%     {{Year,Month,Day},{Hours,Minutes,Seconds}}
-%%    ) - 62167219200)*1000000.
-
-
 to_iso8601({{Y,Mo,D}, {H,Mn,S}}) ->
     FmtStr = "~4.10.0B-~2.10.0B-~2.10.0BT~2.10.0B:~2.10.0B:~2.10.0BZ",
     IsoStr = io_lib:format(FmtStr, [Y, Mo, D, H, Mn, S]),

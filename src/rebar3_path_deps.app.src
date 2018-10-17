@@ -1,0 +1,15 @@
+{application, rebar3_path_deps,
+ [{description, "A rebar plugin to specify path dependencies. "},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, ["Benoit Chesneauu"]},
+  {licenses, ["Apache 2.0"]},
+  {links, [{"Github", "https://github.com/benoitc/rebar3_path_deps"}]}
+ ]}.

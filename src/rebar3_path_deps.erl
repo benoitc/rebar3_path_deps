@@ -1,4 +1,4 @@
--module(rebar3_path_dep).
+-module(rebar3_path_deps).
 
 -export([init/1]).
 
