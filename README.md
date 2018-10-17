@@ -44,5 +44,5 @@ Then just compile your application
     ===> Verifying dependencies...
     ===> Fetching mysubapp ({path,"./mysubapp",
                                         {mtime,<<"2018-10-17T11:21:18Z">>}})
-    ===> Compiling hackney
+    ===> Compiling mysubapp
     ===> Compiling myapp
