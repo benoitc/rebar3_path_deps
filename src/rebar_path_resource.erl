@@ -29,14 +29,18 @@ lock_(_Dir, {path, Path}) ->
 download(TmpDir, {path, Path, _}, State) ->
   download(TmpDir, {path, Path}, State);
 download(TmpDir, {path, Path}, State) ->
-
   case download_(TmpDir, {path, Path}, State) of
     ok -> {ok, State};
     Error -> Error
   end.
 
 download(TmpDir, AppInfo, State, _) ->
-  download_(TmpDir, rebar_app_info:source(AppInfo), State).
+  case rebar_app_info:source(AppInfo) of
+    {path, Path} ->
+      download_(TmpDir, {path, Path}, State);
+    {path, Path, _} ->
+      download_(TmpDir, {path, Path}, State)
+  end.
 
 download_(Dir, {path, Path}, _State) ->
   ok = filelib:ensure_dir(Dir),
