@@ -46,7 +46,7 @@ download_(Dir, {path, Path}, _State) ->
   ok = filelib:ensure_dir(Dir),
   {ok, Cwd} = file:get_cwd(),
   Source = filename:join([Cwd, Path]),
-  ok = ec_file:copy(Source, Dir, [recursive, {file_info, [mode, time, owner, group]}]),
+  foreach(fun(X) -> copy(X, Source, Dir) end, [".git", "_build", "examples"], Source),
   rebar_log:log(debug, "copied source from=~p, to=~p ~n", [Path, Dir]),
   LastModified = last_modified(Source),
   {ok, A} = file:read_file_info(Dir),
@@ -117,7 +117,33 @@ is_excluded(Path) ->
                       (re:run(Path, RE) =/= nomatch) orelse (filelib:is_regular (Path) /= true)
                   end, false, KnownExcludes).
 
+copy(File, Source, Target) ->
+    SourceFile = filename:join([Source | File]),
+    TargetFile = filename:join([Target | File]),
+    ok = filelib:ensure_dir(TargetFile),
+    {ok, _} = file:copy(SourceFile, TargetFile).
 
+%%
+%% applies a function to each file for its side-effects
+foreach(Fun, Ignore, Path) ->
+    foreach(Fun, Path, Ignore, []).
 
-
+foreach(Fun, Root, Ignore, Path) ->
+    File = filename:join([Root | Path]),
+    case filelib:is_dir(File) of
+        true  ->
+            case file:list_dir(File) of
+                {ok, List} ->
+                    lists:foreach(
+                        fun(X) ->
+                            foreach(Fun, Root, Ignore, X)
+                        end,
+                        [Path ++ [X] || X <- List, not lists:member(X, Ignore)]
+                    );
+                {error, _Reason} ->
+                   ok
+            end;
+        false -> 
+            Fun(Path)
+    end.
 
