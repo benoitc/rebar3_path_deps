@@ -114,7 +114,7 @@ is_excluded(Path) ->
 
       lists:foldl(fun(_, true) -> true;
                      (RE, false) ->
-                      (re:run(Path, RE) =/= nomatch) orelse (filelib:is_regular (Path) /= true)
+                      (re:run(Path, RE, [unicode]) =/= nomatch) orelse (filelib:is_regular (Path) /= true)
                   end, false, KnownExcludes).
 
 copy(File, Source, Target) ->
