@@ -50,7 +50,12 @@ download_(Dir, {path, Path}, _State) ->
   rebar_log:log(debug, "copied source from=~p, to=~p ~n", [Path, Dir]),
   LastModified = last_modified(Source),
   {ok, A} = file:read_file_info(Dir),
-  file:write_file_info(Path, A#file_info{mtime = LastModified, atime = LastModified}).
+  case file:write_file_info(Path, A#file_info{mtime = LastModified, atime = LastModified}) of
+      ok ->
+          ok;
+      {error, R} ->
+          rebar_log:log(info, "fail to change mtime, reason=R", [R])
+  end.
 
 
 make_vsn(_Dir) ->
