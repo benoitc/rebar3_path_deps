@@ -54,7 +54,7 @@ download_(Dir, {path, Path}, _State) ->
       ok ->
           ok;
       {error, R} ->
-          rebar_log:log(info, "fail to change mtime, reason=R", [R]),
+          rebar_log:log(info, "fail to change mtime, reason=~p ~n", [R]),
           ok
   end.
 
