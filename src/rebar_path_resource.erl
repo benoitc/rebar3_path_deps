@@ -56,12 +56,12 @@ download_(Dir, {path, Path}, _State) ->
 make_vsn(_Dir) ->
   {error, "Replacing version of type path not supported."}.
 
-needs_update(Dir, {path, Path, _}) ->
+needs_update(Dir, Path) ->
   needs_update_(Dir, {path, Path});
 needs_update(AppInfo, _) ->
   needs_update_(rebar_app_info:dir(AppInfo), rebar_app_info:source(AppInfo)).
 
-needs_update_(Dir, {path, Path}) ->
+needs_update_(Dir, {path, Path, _}) ->
   {ok, Cwd} = file:get_cwd(),
   Source = filename:join([Cwd, Path]),
   LastModified = last_modified(Source),
