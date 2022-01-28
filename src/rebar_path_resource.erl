@@ -56,11 +56,9 @@ download_(Dir, {path, Path}, _State) ->
 make_vsn(_Dir) ->
   {error, "Replacing version of type path not supported."}.
 
-needs_update(Dir, {path, Path, _} = E) ->
-  rebar_log:log(debug, "needs_update: E:~p", [E]),
+needs_update(Dir, {path, Path, _}) ->
   needs_update_(Dir, {path, Path});
-needs_update(AppInfo, S) ->
-  rebar_log:log(debug, "needs_update: S:~p", [S]),
+needs_update(AppInfo, _) ->
   needs_update_(rebar_app_info:dir(AppInfo), rebar_app_info:source(AppInfo)).
 
 needs_update_(Dir, {path, Path, _}) ->
