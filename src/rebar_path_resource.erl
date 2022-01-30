@@ -61,14 +61,13 @@ needs_update(Dir, {path, Path, _}) ->
 needs_update(AppInfo, _) ->
   needs_update_(rebar_app_info:dir(AppInfo), rebar_app_info:source(AppInfo)).
 
-needs_update_(Dir, {path, Path}) ->
+needs_update_(Dir, {path, Path, _}) ->
   {ok, Cwd} = file:get_cwd(),
   Source = filename:join([Cwd, Path]),
   LastModified = last_modified(Source),
   Old = filelib:last_modified(Dir),
   rebar_log:log(debug, "compare dir=~p, path=~p last modified=~p, old=~p~n", [Dir, Path, LastModified, Old]),
   (Old < LastModified).
-
 
 last_modified(Source) ->
   Files = filter_files(dir_files(Source)),
